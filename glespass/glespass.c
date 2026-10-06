@@ -144,6 +144,15 @@ static void (*p_getShaderSource)(GLuint, GLsizei, GLsizei *, GLchar *);
 static void (*p_getProgramiv)(GLuint, unsigned, GLint *);
 static void (*p_getProgramInfoLog)(GLuint, GLsizei, GLsizei *, GLchar *);
 static int shaderlog_left = -1, compile_fail_total, link_fail_total;
+/* shader work of the current second, appended to the FPS log line when there was any */
+static int shader_links;
+static double shader_ms;
+static double ms_since(const struct timespec *a)
+{
+    struct timespec b;
+    clock_gettime(CLOCK_MONOTONIC, &b);
+    return (b.tv_sec - a->tv_sec) * 1000.0 + (b.tv_nsec - a->tv_nsec) / 1e6;
+}
 
 static void shaderlog_init(void)
 {
@@ -213,7 +222,10 @@ static void glespass_CompileShader(GLuint s)
         khr_debug_install();
         fprintf(stderr, "[glespass] first glCompileShader call reached the wrapper (shader %u)\n", s);
     }
+    struct timespec t0;
+    clock_gettime(CLOCK_MONOTONIC, &t0);
     real_compile(s);
+    shader_ms += ms_since(&t0);
     shaderlog_init();
     GLint ok = 1;
     if (p_getShaderiv)
@@ -245,7 +257,11 @@ static void glespass_LinkProgram(GLuint p)
         first = 0;
         fprintf(stderr, "[glespass] first glLinkProgram call reached the wrapper (program %u)\n", p);
     }
+    struct timespec t0;
+    clock_gettime(CLOCK_MONOTONIC, &t0);
     real_link(p);
+    shader_ms += ms_since(&t0);
+    shader_links++;
     shaderlog_init();
     GLint ok = 1;
     if (p_getProgramiv)
@@ -1035,8 +1051,13 @@ static void f_SwapBuffers(void *d, XID dr)
     if (ft > 50.0) slow++;
     double dt = (t.tv_sec - t0.tv_sec) + (t.tv_nsec - t0.tv_nsec) / 1e9;
     if (dt >= 1.0) {
-        char line[96];
-        int n = snprintf(line, sizeof line, "[CRUSTY] FPS: %.1f (longest frame %.0f ms, %d over 50 ms)\n", frames / dt, ftmax, slow);
+        char line[128];
+        int n = snprintf(line, sizeof line, "[CRUSTY] FPS: %.1f (longest frame %.0f ms, %d over 50 ms)", frames / dt, ftmax, slow);
+        if (shader_links || shader_ms >= 1.0)
+            n += snprintf(line + n, sizeof line - n, " shaders %d in %.0f ms", shader_links, shader_ms);
+        line[n++] = '\n';
+        shader_links = 0;
+        shader_ms = 0;
         if (write(fps_fd, line, n) < 0) {}
         frames = 0;
         slow = 0;

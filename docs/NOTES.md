@@ -32,10 +32,25 @@ Generalisation: for a Windows only Unity game, check the macOS depot for GLCore 
 * Input: gameplay Move is left stick (and WASD) only; the D-pad is only bound in the UI map. The launcher now maps the D-pad onto the left stick half axes (`-lefty:h0.1` etc.). Not yet verified on the device (it dropped off the network during the relaunch).
 * Letterbox bars: the game's Pixel Perfect Cameras (level0 x1, level1 x3; ref 800x450, 32 PPU, Upscale RT off, Crop Frame X and Y on, Stretch Fill on) crop to 16:9, leaving 15 px bars at 640x480 and a thin band at 720x720. Crop off fills the screen at the same 1:1 scale on screens up to 800 wide, but zooms out on 1280x720 (smaller sprites, more view); Crop X only pillarboxes 1280x720. So the launcher turns both crop flags off only when DISPLAY_WIDTH <= 800 (dd at fixed offsets 561596 / 288412 / 291604 / 292540, checked before writing; `setup/ppc_crop.py` is the UnityPy reference, byte identical).
 * Device drop offs on 2026-10-05/06 were my own error: tools/knulli_stop.sh was called without its pattern arguments, and pgrep -f '' killed every process. Not the game. The script now refuses empty patterns.
-* Audio: 57 MB decoded at load, 32 MB of it the two music loops.
+* Audio: 57 MB decoded at load, 32 MB of it the two music loops. Since 2026-10-07 the loops stream (`setup/audio_loadtype.py`), about 10 to 30 MB less in a run.
+
+## Performance in fights (2026-10-07, RG35XX H)
+
+Benchmark: a run is started from the title, then R2 is held for 30 s (fps from `GLESPASS_FPSFILE`, frame cap off). Calm play runs at about 50 fps uncapped; fights at 32 to 40, so the 30 fps cap (`GLESPASS_FPSCAP`) holds most of the time. Run to run spread is large because the fights differ: plain runs scored 40.5 and 43.4 fps average with 29 and 9 frames over 50 ms, so only differences well beyond that count.
+
+Within that spread (no measurable change):
+* Unity quality level 0 instead of the default Ultra (the game is 2D with shadows off at every level; the levels differ in particle raycast budget and pixel lights).
+* Audio at 22050 Hz with 16 real voices; Fixed Timestep 1/30 instead of 0.02 (both via globalgamemanagers).
+* box64 `BOX64_DYNAREC_CALLRET=1` and `BOX64_DYNAREC_BIGBLOCK=0` alone (the combined profile with SAFEFLAGS=0, BIGBLOCK=2, FORWARD=1024, CALLRET=1, DIRTY=1 was clearly worse, 23.5 fps).
+* `SoundEffectSO.Play` without its exception: it adds each sound to a dictionary in a try and counts copies in the catch, so every overlapping sound throws. Replacing that with TryGetValue changed nothing measurable.
+* A title screen warmup that JIT compiles all 5668 game methods (8.7 s spread over the title): the run itself is no faster and the freeze when firing starts stays.
+
+Only audio disabled entirely stood out (46.2 fps, 9 frames over 50 ms), which is not an option.
+
+The freeze when firing starts (one frame of 400 to 770 ms, in every run) is first use cost: about 100 ms of it is shader compiles (glespass appends `shaders N in X ms` to the FPS log line), the rest is new code running for the first time (box64 translating the freshly JIT compiled methods) and first draws of the effects. The JIT warmup shows the JIT is not the part that costs. Fights are bound by the emulated CPU work of the game's scripts.
 
 ## To do
 
 * Verify D-pad movement with the remap, and START (pause) behaviour (on PC the frame froze without a visible menu in both GLES and desktop GL runs, so not a port regression; check on the device).
-* Long run memory check (20 minutes of hordes), startup time (Mono JIT under box64?).
+* Long run memory check (20 minutes of hordes). Startup: not the JIT (a full JIT warmup takes 8.7 s); the run load is one frame of about 39 s.
 * README, port.json, gameinfo.xml, screenshot, licenses (game scope), repo staging.
