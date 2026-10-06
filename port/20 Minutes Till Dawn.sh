@@ -48,7 +48,8 @@ chmod a+x "$GAMEDIR/box64/box64"
 # the game data out of the macOS app, and OpenGL ES shaders in five files (see tools/patchscript).
 # The stamp covers every file the setup creates or changes.
 patch_stamp() { (cd "$DATADIR" && bash "$GAMEDIR/tools/stamp.sh"); }
-setup_done() { [ -s .patch_stamp ] && [ "$(cat .patch_stamp)" = "$(patch_stamp)" ]; }
+# Compared sorted: the file order of the globs depends on the locale the script runs under
+setup_done() { [ -s .patch_stamp ] && [ "$(LC_ALL=C sort .patch_stamp)" = "$(patch_stamp | LC_ALL=C sort)" ]; }
 port_files "$DATADIR/MinutesTillDawn.x86_64" "$DATADIR/UnityPlayer.so" "$DATADIR/MinutesTillDawn_Data/Managed/Assembly-CSharp.dll"
 if setup_done; then port_log "setup: up to date"; else port_log "setup: needed (first run, game update or changed files)"; fi
 if ! setup_done; then
