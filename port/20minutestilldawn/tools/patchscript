@@ -1,0 +1,149 @@
+#!/bin/bash
+# First run setup, run by PortMaster's patcher (utils/patcher.txt), which shows each line this
+# script prints. The launcher exports GAMEDIR, DATADIR, DEVICE_ARCH and controlfolder.
+# Step 1: Unity's own Linux player for the game's engine version (2019.4.40f1) is taken from
+#   Unity's installer, from gamedata/ when the player put it there, or downloaded from Unity.
+#   The game only has Windows and macOS builds, and the macOS build carries OpenGL shaders.
+# Step 2: the game data is moved out of the macOS app (20MinutesTillDawn.app) next to the player.
+# Steps 3 to 10: five files get OpenGL ES 3 shaders, the game's script assembly a faster expiry
+#   for pooled effects (setup/ttl_patch.cs), and the menus and the small font are made readable on
+#   small screens (setup/ui_levels.py, setup/font_rescale.py), from the xdelta patches in patch/.
+#   Each file is checked by MD5 before and after, so only the supported Steam build is patched, and
+#   a file already patched is left alone.
+cd "$DATADIR" || exit 1
+SEVENZIP="$controlfolder/7zzs.$DEVICE_ARCH"
+XDELTA="$controlfolder/xdelta3"
+[ -x "$XDELTA" ] || XDELTA="$(command -v xdelta3)"
+DATA=MinutesTillDawn_Data
+APP=20MinutesTillDawn.app
+
+UNITY_EXE=UnitySetup-Linux-Mono-Support-for-Editor-2019.4.40f1.exe
+UNITY_URL="https://download.unity3d.com/download_unity/ffc62b691db5/TargetSupportInstaller/$UNITY_EXE"
+UNITY_SHA256=97fe1186bf3561a7ea1e5a8681372a3c86b0142eebde108b891b8503cda4ee1d
+UNITY_VAR='$INSTDIR$_59_/Variations/linux64_withgfx_nondevelopment_mono'
+PLAYER_MD5="MinutesTillDawn.x86_64 e412e5c9c47208878bc0e8b7e928bd72
+UnityPlayer.so ce608e601f0b8c6af2484e4ad54df58d"
+
+# file|original MD5 (macOS depot 1966902, manifest 1890137909460856104)|patched MD5
+FILES="resources.assets|35bb1b987697783879674557fef512f0|04b54143cdc017c81cc1f0e5cf2de04e
+sharedassets0.assets|990586bd7be04c2ff795ae4d6ac3c091|cddb1192351a8d4438b676c35aa7836e
+sharedassets1.assets|d0c0acaa1b086a542da84c399144eed8|d6ce37a394615f37f9acdb22a739da7a
+Resources/unity_builtin_extra|261811c2e7a5276b25e3550ebd73673b|4d3e0d6b14ea50a004d59c4e61d81845
+Resources/unity default resources|dab5f3c3e100824ae7e91815c564a608|35f5c92ef943b60ff2e50af834664357
+Managed/Assembly-CSharp.dll|f2fc5ed1a85a16c3898da46bb23aefb0|58574af92a4e04edb63a4dc61a201469
+level0|73d57e0c6e1b2a0678d3c6a2daf634d0|baba55e7b75d587869759dcddf7752fb
+level1|8d788209a1dc12000bce9c72369dc764|588bc9e55c484faf3d08a030abb435a2"
+
+echo "Preparing 20 Minutes Till Dawn for this device."
+echo "This runs once (and again after a game update)."
+if [ -z "$XDELTA" ] || [ ! -x "$SEVENZIP" ]; then
+  echo "PortMaster's xdelta3 or 7zzs is missing. Update PortMaster and try again."
+  exit 1
+fi
+
+player_ok() {
+  local f sum
+  while read -r f sum; do
+    [ "$(md5sum "$f" 2>/dev/null | cut -d' ' -f1)" = "$sum" ] || return 1
+  done <<< "$PLAYER_MD5"
+  [ -f "$DATA/MonoBleedingEdge/x86_64/libmonobdwgc-2.0.so" ] &&
+    [ -f "$DATA/Resources/unity default resources" ]
+}
+
+echo "Step 1 of 10: Unity Linux player"
+# Step 2 needs the data folder in place before the player's files go into it
+if [ ! -d "$DATA" ] && [ -d "$APP/Contents/Resources/Data" ]; then
+  mv "$APP/Contents/Resources/Data" "$DATA" || exit 1
+fi
+if [ ! -d "$DATA" ]; then
+  echo "  The game files are missing: copy 20MinutesTillDawn.app into"
+  echo "  ports/20minutestilldawn/gamedata (see the README)."
+  exit 1
+fi
+if player_ok; then
+  echo "  already in place"
+else
+  if [ ! -f "$UNITY_EXE" ]; then
+    echo "  downloading from Unity (57 MB)"
+    if command -v curl >/dev/null; then
+      curl -fsSL -o "$UNITY_EXE.part" "$UNITY_URL"
+    else
+      wget -q -O "$UNITY_EXE.part" "$UNITY_URL"
+    fi && mv -f "$UNITY_EXE.part" "$UNITY_EXE"
+    rm -f "$UNITY_EXE.part"
+  fi
+  if [ ! -f "$UNITY_EXE" ]; then
+    echo "  The download failed. Connect the device to the internet, or download"
+    echo "  $UNITY_EXE"
+    echo "  on a computer (see the README) and copy it into ports/20minutestilldawn/gamedata."
+    exit 1
+  fi
+  if [ "$(sha256sum "$UNITY_EXE" | cut -d' ' -f1)" != "$UNITY_SHA256" ]; then
+    echo "  $UNITY_EXE is damaged or a different version; delete it and retry."
+    exit 1
+  fi
+  echo "  unpacking"
+  rm -rf player.tmp
+  "$SEVENZIP" x -y -oplayer.tmp "$UNITY_EXE" "$UNITY_VAR/LinuxPlayer" "$UNITY_VAR/UnityPlayer.so" \
+    "$UNITY_VAR/Data/MonoBleedingEdge" "$UNITY_VAR/Data/Resources" >/dev/null || { echo "  unpacking failed."; exit 1; }
+  V="player.tmp/$UNITY_VAR"
+  mv -f "$V/LinuxPlayer" MinutesTillDawn.x86_64 && mv -f "$V/UnityPlayer.so" UnityPlayer.so &&
+    rm -rf "$DATA/MonoBleedingEdge" && mv "$V/Data/MonoBleedingEdge" "$DATA/MonoBleedingEdge" &&
+    mkdir -p "$DATA/Resources" &&
+    mv -f "$V/Data/Resources/unity default resources" "$DATA/Resources/" || { echo "  failed."; exit 1; }
+  rm -rf player.tmp
+  chmod a+x MinutesTillDawn.x86_64
+  if ! player_ok; then
+    echo "  The Unity player files do not match the expected version."
+    exit 1
+  fi
+  rm -f "$UNITY_EXE"
+  echo "  done"
+fi
+
+echo "Step 2 of 10: game data"
+# The rest of the macOS app (its player, Mono and Steam library) is not used.
+rm -rf "$APP"
+echo "  done"
+
+cd "$DATA" || exit 1
+# the launcher sets the camera crop bytes in the level files for the screen (tools/level_edits.txt);
+# put them back so the MD5 checks below see the patched files
+while read -r kind file off orig new name; do
+  [ "$(od -An -tx1 -j "$off" -N$(( ${#orig} / 2 )) "$file" 2>/dev/null | tr -d ' \n')" = "$new" ] &&
+    printf "$(sed 's/../\\x&/g' <<< "$orig")" | dd of="$file" bs=1 seek="$off" conv=notrunc 2>/dev/null
+done < "$GAMEDIR/tools/level_edits.txt"
+failed=0
+n=2
+while IFS='|' read -r file orig patched; do
+  n=$((n + 1))
+  echo "Step $n of 10: $file"
+  sum="$(md5sum "$file" 2>/dev/null | cut -d' ' -f1)"
+  if [ "$sum" = "$patched" ]; then
+    echo "  already patched"
+    continue
+  fi
+  if [ "$sum" != "$orig" ]; then
+    echo "  unexpected version (MD5 $sum)."
+    failed=1
+    continue
+  fi
+  b="$(basename "$file")"
+  if "$XDELTA" -d -f -s "$file" "$GAMEDIR/patch/${b// /_}.xdelta" "$file.new" &&
+     [ "$(md5sum "$file.new" | cut -d' ' -f1)" = "$patched" ]; then
+    mv -f "$file.new" "$file"
+    echo "  done"
+  else
+    rm -f "$file.new"
+    echo "  patching failed."
+    failed=1
+  fi
+done <<< "$FILES"
+
+if [ "$failed" = 0 ]; then
+  cd "$DATADIR" && bash "$GAMEDIR/tools/stamp.sh" > "$GAMEDIR/.patch_stamp"
+  echo "Done. Starting the game."
+else
+  echo "Setup failed. This port supports the current Steam (macOS) build of the game."
+  echo "Download it again (see the README), copy it and retry."
+fi

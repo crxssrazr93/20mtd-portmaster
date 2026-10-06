@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gameList>
+  <game>
+    <path>./20 Minutes Till Dawn.sh</path>
+    <name>20 Minutes Till Dawn</name>
+    <desc>A survival roguelite where endless hordes of creatures lurk in the dark. Craft overpowering builds and wipe out waves of Lovecraftian nightmares. Will you survive the night?</desc>
+    <releasedate>20230608T000000</releasedate>
+    <developer>flanne</developer>
+    <publisher>flanne</publisher>
+    <genre>Action</genre>
+    <image>./20minutestilldawn/cover.png</image>
+  </game>
+</gameList>

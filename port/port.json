@@ -1,0 +1,42 @@
+{
+    "version": 4,
+    "name": "20minutestilldawn.zip",
+    "items": [
+        "20 Minutes Till Dawn.sh",
+        "20minutestilldawn"
+    ],
+    "items_opt": [],
+    "attr": {
+        "title": "20 Minutes Till Dawn",
+        "porter": [
+            "crxssrazr93"
+        ],
+        "desc": "A survival roguelite where endless hordes of creatures lurk in the dark. Craft overpowering builds and wipe out waves of Lovecraftian nightmares. Will you survive the night?",
+        "desc_md": null,
+        "inst": "Purchase the game on Steam and use the Steam console to download the macOS build: `download_depot 1966900 1966902`. Copy `20MinutesTillDawn.app` from the download into `ports/20minutestilldawn/gamedata/`. The first start downloads Unity's Linux player (57 MB, needs internet) and adapts the game files, which takes a few minutes.",
+        "inst_md": "Purchase the game on [Steam](https://store.steampowered.com/app/1966900/20_Minutes_Till_Dawn/) and use the [Steam console](https://steamcommunity.com/sharedfiles/filedetails/?id=873543244) to download the macOS build: `download_depot 1966900 1966902`. Copy `20MinutesTillDawn.app` from the download into `ports/20minutestilldawn/gamedata/`. The first start downloads Unity's Linux player (57 MB, needs internet) and adapts the game files, which takes a few minutes.",
+        "genres": [
+            "action",
+            "rpg"
+        ],
+        "image": null,
+        "rtr": false,
+        "exp": false,
+        "runtime": [
+            "weston_pkg_0.2.squashfs"
+        ],
+        "store": [
+            {
+                "name": "Steam",
+                "gameurl": "https://store.steampowered.com/app/1966900/20_Minutes_Till_Dawn/",
+                "developerurl": "https://store.steampowered.com/developer/flanne"
+            }
+        ],
+        "availability": "paid",
+        "reqs": [],
+        "arch": [
+            "aarch64"
+        ],
+        "min_glibc": ""
+    }
+}

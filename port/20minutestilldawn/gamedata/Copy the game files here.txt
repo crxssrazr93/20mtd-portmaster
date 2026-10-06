@@ -1,0 +1,1 @@
+Copy 20MinutesTillDawn.app (the macOS build from Steam) into this folder. See the README.
