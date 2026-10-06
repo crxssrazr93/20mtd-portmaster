@@ -12,4 +12,6 @@ else
     [ -e "$f" ] && echo "$(ls -lnL "$f" | awk '{print $5}') $(date -r "$f" +%s) $f"
   done
 fi
+# the setup's own version: a new one reruns the setup once on installs prepared before it
+echo "setup 2"
 exit 0

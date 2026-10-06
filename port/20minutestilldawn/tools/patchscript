@@ -30,10 +30,15 @@ UNITY_VAR='$INSTDIR$_59_/Variations/linux64_withgfx_nondevelopment_mono'
 PLAYER_MD5="MinutesTillDawn.x86_64 e412e5c9c47208878bc0e8b7e928bd72
 UnityPlayer.so ce608e601f0b8c6af2484e4ad54df58d"
 
+# Files patched by an earlier version of this port, updated in place: file|that version's MD5|
+# offset|new byte (hex). The music loops' load type changed to Streaming (setup/audio_loadtype.py).
+UPGRADES="sharedassets0.assets|cddb1192351a8d4438b676c35aa7836e|9156336|02
+sharedassets1.assets|d6ce37a394615f37f9acdb22a739da7a|102548|02"
+
 # file|original MD5 (macOS depot 1966902, manifest 1890137909460856104)|patched MD5
 FILES="resources.assets|35bb1b987697783879674557fef512f0|04b54143cdc017c81cc1f0e5cf2de04e
-sharedassets0.assets|990586bd7be04c2ff795ae4d6ac3c091|cddb1192351a8d4438b676c35aa7836e
-sharedassets1.assets|d0c0acaa1b086a542da84c399144eed8|d6ce37a394615f37f9acdb22a739da7a
+sharedassets0.assets|990586bd7be04c2ff795ae4d6ac3c091|5b8ba3dfb9c832378158b1d1a4bf635f
+sharedassets1.assets|d0c0acaa1b086a542da84c399144eed8|d409e0b80aeda3c93e37c7718d702e43
 Resources/unity_builtin_extra|261811c2e7a5276b25e3550ebd73673b|4d3e0d6b14ea50a004d59c4e61d81845
 Resources/unity default resources|dab5f3c3e100824ae7e91815c564a608|35f5c92ef943b60ff2e50af834664357
 Managed/Assembly-CSharp.dll|f2fc5ed1a85a16c3898da46bb23aefb0|58574af92a4e04edb63a4dc61a201469
@@ -129,6 +134,18 @@ while IFS='|' read -r file orig patched; do
   sum="$(md5sum "$file" 2>/dev/null | cut -d' ' -f1)"
   if [ "$sum" = "$patched" ]; then
     echo "  already patched"
+    continue
+  fi
+  upgrade="$(grep "^$file|$sum|" <<< "$UPGRADES")"
+  if [ -n "$upgrade" ]; then
+    IFS='|' read -r _ _ off byte <<< "$upgrade"
+    printf "\\x$byte" | dd of="$file" bs=1 seek="$off" conv=notrunc 2>/dev/null
+    if [ "$(md5sum "$file" | cut -d' ' -f1)" = "$patched" ]; then
+      echo "  updated"
+    else
+      echo "  update failed."
+      failed=1
+    fi
     continue
   fi
   if [ "$sum" != "$orig" ]; then

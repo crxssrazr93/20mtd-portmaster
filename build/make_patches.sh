@@ -1,7 +1,8 @@
 #!/bin/bash
 # Regenerates the game file changes the port ships:
 #   port/20minutestilldawn/patch/*.xdelta   (setup/gles_shaders2019.py, setup/ttl_patch.cs,
-#     setup/ui_levels.py, setup/font_rescale.py, the Canvas Scaler edit of setup/byte_edits.py)
+#     setup/ui_levels.py, setup/font_rescale.py, setup/audio_loadtype.py, the Canvas Scaler edit
+#     of setup/byte_edits.py)
 #   the MD5s in port/20minutestilldawn/tools/patchscript
 #   port/20minutestilldawn/tools/level_edits.txt (the camera crop bytes the launcher sets per screen)
 # from an untouched copy of the macOS Steam depot and Unity's Linux player installer.
@@ -36,6 +37,7 @@ mcs -r:"$CECIL" -out:"$W/ttl/ttl_patch.exe" "$R/setup/ttl_patch.cs"
 mono "$W/ttl/ttl_patch.exe" "$W/orig/Managed" "$PD/Managed/Assembly-CSharp.dll"
 "$PY" "$R/setup/ui_levels.py" "$PD"
 "$PY" "$R/setup/font_rescale.py" "$PD"
+"$PY" "$R/setup/audio_loadtype.py" "$PD"
 # the camera crop bytes depend on the screen, so the launcher sets them (offsets in the patched
 # level files); the Canvas Scaler edit in sharedassets0.assets goes into its xdelta
 "$PY" "$R/setup/byte_edits.py" "$PD" | grep -E '^crop level[01] ' > "$P/tools/level_edits.txt"
