@@ -12,7 +12,7 @@ trap 'rm -rf "$stage"' EXIT
 cd "$R/port"
 cp "20 Minutes Till Dawn.sh" "$stage/"
 cp -r 20minutestilldawn "$stage/"
-rm -rf "$stage"/20minutestilldawn/{conf,log.txt,.patch_stamp}
+rm -rf "$stage"/20minutestilldawn/{conf,log.txt,setup_log.txt,.patch_stamp}
 find "$stage/20minutestilldawn/gamedata" -mindepth 1 ! -name 'Copy the game files here.txt' -exec rm -rf {} +
 cp port.json gameinfo.xml screenshot.png cover.png "$stage/20minutestilldawn/"
 cp README.md "$stage/20minutestilldawn/20minutestilldawn.md"

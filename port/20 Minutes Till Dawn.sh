@@ -53,7 +53,7 @@ if ! setup_done; then
   source "$controlfolder/utils/patcher.txt"
   # tools/patchscript writes the stamp only when every file checked out
   if ! setup_done; then
-    pm_message "Preparing the game failed. See ports/20minutestilldawn/log.txt and the README."
+    pm_message "Preparing the game failed. See ports/20minutestilldawn/setup_log.txt and the README."
     sleep 8
     pm_finish
     exit 1

@@ -21,3 +21,4 @@ macos/
 *.zip
 __pycache__/
 venv/
+port/20minutestilldawn/setup_log.txt

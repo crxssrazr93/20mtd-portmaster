@@ -10,6 +10,9 @@
 #   small screens (setup/ui_levels.py, setup/font_rescale.py), from the xdelta patches in patch/.
 #   Each file is checked by MD5 before and after, so only the supported Steam build is patched, and
 #   a file already patched is left alone.
+# PortMaster's patcher only shows this output on screen; keep a copy for bug reports.
+exec > >(tee "$GAMEDIR/setup_log.txt") 2>&1
+echo "$(date) ${CFW_NAME:-} ${DEVICE_NAME:-} ${DEVICE_ARCH:-}" >&2
 cd "$DATADIR" || exit 1
 SEVENZIP="$controlfolder/7zzs.$DEVICE_ARCH"
 XDELTA="$controlfolder/xdelta3"
@@ -37,7 +40,8 @@ level1|8d788209a1dc12000bce9c72369dc764|588bc9e55c484faf3d08a030abb435a2"
 echo "Preparing 20 Minutes Till Dawn for this device."
 echo "This runs once (and again after a game update)."
 if [ -z "$XDELTA" ] || [ ! -x "$SEVENZIP" ]; then
-  echo "PortMaster's xdelta3 or 7zzs is missing. Update PortMaster and try again."
+  echo "PortMaster's xdelta3 or 7zzs is missing ($XDELTA, $SEVENZIP)."
+  echo "Update PortMaster and try again."
   exit 1
 fi
 
@@ -66,10 +70,11 @@ else
   if [ ! -f "$UNITY_EXE" ]; then
     echo "  downloading from Unity (57 MB)"
     if command -v curl >/dev/null; then
-      curl -fsSL -o "$UNITY_EXE.part" "$UNITY_URL"
+      curl -fsSL -o "$UNITY_EXE.part" "$UNITY_URL" 2>&1 | sed 's/^/  /'
     else
-      wget -q -O "$UNITY_EXE.part" "$UNITY_URL"
-    fi && mv -f "$UNITY_EXE.part" "$UNITY_EXE"
+      wget -q -O "$UNITY_EXE.part" "$UNITY_URL" 2>&1 | sed 's/^/  /'
+    fi
+    [ -s "$UNITY_EXE.part" ] && mv -f "$UNITY_EXE.part" "$UNITY_EXE"
     rm -f "$UNITY_EXE.part"
   fi
   if [ ! -f "$UNITY_EXE" ]; then
