@@ -178,6 +178,13 @@ $ESUDO env WRAPPED_LIBRARY_PATH="$GAMEDIR/glespass" GLESPASS_CTXFIX=1 \
   "$GAMEDIR/box64/box64" ./MinutesTillDawn.x86_64 -screen-fullscreen 1 \
   -screen-width "$DISPLAY_WIDTH" -screen-height "$DISPLAY_HEIGHT" -logFile "$GAMEDIR/player.log"
 
+# Unity writes its own messages to player.log; copy the end of it here so log.txt alone is enough
+# for a bug report.
+if [ -f "$GAMEDIR/player.log" ]; then
+  echo "--- end of player.log (full log: ports/20minutestilldawn/player.log)"
+  tail -n 40 "$GAMEDIR/player.log"
+fi
+
 $ESUDO $weston_dir/westonwrap.sh cleanup
 if [[ "$PM_CAN_MOUNT" != "N" ]]; then
   $ESUDO umount "${weston_dir}"
