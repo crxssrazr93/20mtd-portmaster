@@ -22,4 +22,4 @@ SOFTWARE.
 
 The above applies to the files written for this port. The game, box64, libgcc_s,
 glespass, Westonpack and the vendored shader rewriter (setup/vendor, 0BSD) keep their
-own licenses (see port/shogunshowdown/licenses/).
+own licenses (see port/20minutestilldawn/licenses/).

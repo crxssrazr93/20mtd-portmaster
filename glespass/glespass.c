@@ -950,11 +950,40 @@ static void focus_check(void *dpy, XID win)
     fprintf(stderr, "[glespass] focus: gave window 0x%lx input focus (had 0x%lx)\n", (unsigned long)win, (unsigned long)cur);
 }
 
+/* ---- frame cap (GLESPASS_FPSCAP=fps) ----
+   A frame rate that swings between 35 and 45 fps on a 60 Hz screen shows frames for one or two
+   refreshes unevenly, which looks choppier than a steady lower rate. This holds each swap until
+   the next slot of a fixed cadence; a frame that is already late starts a new cadence instead of
+   rushing the next ones. */
+static void frame_cap(void)
+{
+    static double period = -1;
+    static struct timespec next;
+    if (period < 0) {
+        const char *e = getenv("GLESPASS_FPSCAP");
+        double fps = e && *e ? atof(e) : 0;
+        period = fps > 0 ? 1.0 / fps : 0;
+    }
+    if (period <= 0)
+        return;
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    double late = (now.tv_sec - next.tv_sec) + (now.tv_nsec - next.tv_nsec) / 1e9;
+    if (!next.tv_sec || late > period)
+        next = now;
+    else if (late < 0)
+        clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next, NULL);
+    long ns = next.tv_nsec + (long)(period * 1e9);
+    next.tv_sec += ns / 1000000000L;
+    next.tv_nsec = ns % 1000000000L;
+}
+
 static void (*f_real_SwapBuffers)(void *, XID);
 static void f_SwapBuffers(void *d, XID dr)
 {
-    static int frames;
-    static struct timespec t0;
+    static int frames, slow;
+    static double ftmax;
+    static struct timespec t0, tprev;
     struct timespec t;
     static __thread int swaps;
     static long render_tid;
@@ -977,6 +1006,7 @@ static void f_SwapBuffers(void *d, XID dr)
     }
     if (probe_on()) probe_swap();
     focus_check(d, dr);
+    frame_cap();
     f_real_SwapBuffers(d, dr);
     /* tell the launcher's THREAD_PIN loop which thread renders (GLESPASS_RENDERTID=path) */
     long tid = thread_id();
@@ -996,14 +1026,21 @@ static void f_SwapBuffers(void *d, XID dr)
     if (!fpslog_on())
         return;
     clock_gettime(CLOCK_MONOTONIC, &t);
-    if (!t0.tv_sec) t0 = t;
+    if (!t0.tv_sec) t0 = tprev = t;
     frames++;
+    /* the average hides stutter: also the longest frame of the second and the frames over 50 ms */
+    double ft = ((t.tv_sec - tprev.tv_sec) + (t.tv_nsec - tprev.tv_nsec) / 1e9) * 1000.0;
+    tprev = t;
+    if (ft > ftmax) ftmax = ft;
+    if (ft > 50.0) slow++;
     double dt = (t.tv_sec - t0.tv_sec) + (t.tv_nsec - t0.tv_nsec) / 1e9;
     if (dt >= 1.0) {
-        char line[64];
-        int n = snprintf(line, sizeof line, "[CRUSTY] FPS: %.1f\n", frames / dt);
+        char line[96];
+        int n = snprintf(line, sizeof line, "[CRUSTY] FPS: %.1f (longest frame %.0f ms, %d over 50 ms)\n", frames / dt, ftmax, slow);
         if (write(fps_fd, line, n) < 0) {}
         frames = 0;
+        slow = 0;
+        ftmax = 0;
         t0 = t;
     }
 }

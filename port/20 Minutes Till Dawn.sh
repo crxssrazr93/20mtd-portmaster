@@ -185,10 +185,12 @@ port_log "starting the game"
 # box64 runs libgcc_s.so.1 only as an x86_64 library (it has no native wrapper for it), so the
 # port carries that one, as other box64 ports do.
 # GLESPASS_VENDOR / GLESPASS_RENDERER hide the GPU name from the player: for a tile based GPU
-# (Mali) Unity turns "don't care" camera target loads into clears (found in the Shogun Showdown
-# port, where it left only the UI on screen).
+# (Mali) Unity turns "don't care" camera target loads into clears, which can leave only the UI
+# on screen.
+# GLESPASS_FPSCAP holds the frame rate at a steady 30: uncapped it swings between 33 and 47 fps,
+# with frames from 22 to 60 ms, which looks choppy on a 60 Hz screen. MTD_FPS overrides it (0 = off).
 $ESUDO env WRAPPED_LIBRARY_PATH="$GAMEDIR/glespass" GLESPASS_CTXFIX=1 \
-  GLESPASS_VENDOR=Generic GLESPASS_RENDERER=GLES-device \
+  GLESPASS_VENDOR=Generic GLESPASS_RENDERER=GLES-device GLESPASS_FPSCAP="${MTD_FPS:-30}" \
   BOX64_LD_LIBRARY_PATH="$GAMEDIR/box64/box64-x86_64-linux-gnu" \
   $weston_dir/westonwrap.sh headless noop kiosk crusty_glx \
   XDG_RUNTIME_DIR="$REAL_XDG_RUNTIME_DIR" HOME="$GAMEDIR/conf" XDG_CONFIG_HOME="$GAMEDIR/conf" \

@@ -1,9 +1,8 @@
 """Rewrite the OpenGLCore shader programs of a Unity 2019.4 build as GLSL ES 3.00, in place.
 
-Same approach as the Shogun Showdown port (Unity 2021.3): the player keeps its OpenGLCore renderer
-and shader programs (platform 15), runs on an OpenGL ES 3.x context, and the code of every GLCore
-program is replaced by its GLSL ES 3.00 translation. The text rewriter is unityport's
-convert_program (Knifethrower/PM-Porting-Tools, 0BSD).
+The player keeps its OpenGLCore renderer and shader programs (platform 15), runs on an OpenGL ES
+3.x context, and the code of every GLCore program is replaced by its GLSL ES 3.00 translation.
+The text rewriter is unityport's convert_program (Knifethrower/PM-Porting-Tools, 0BSD).
 
 2019.4 layout (blob entry version 201806140): per platform, nested offsets/compressedLengths/
 decompressedLengths; a decompressed segment is a count, a table of 12 byte (offset, length,
