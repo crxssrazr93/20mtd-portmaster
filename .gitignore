@@ -23,3 +23,4 @@ __pycache__/
 venv/
 port/20minutestilldawn/setup_log.txt
 port/20minutestilldawn/player.log
+port/20minutestilldawn/*.prev.txt

@@ -30,7 +30,7 @@ Source and build instructions: https://github.com/crxssrazr93/20mtd-portmaster
 
 ## Reporting problems
 
-Please send `ports/20minutestilldawn/log.txt`, `ports/20minutestilldawn/setup_log.txt` and `player.log` (Unity's own log). `log.txt` is rewritten on every start, so copy it right after the problem happens. Lines starting with `PORT:` list the device, firmware, screen, memory and swap, the state of the setup, and at the end how long the game ran and whether the system ran out of memory.
+Please send `ports/20minutestilldawn/log.txt`, `ports/20minutestilldawn/setup_log.txt` and `player.log` (Unity's own log). `log.txt` is rewritten on every start and the run before it is kept as `log.prev.txt` (the setup log likewise), so send both if the game was started again after the problem. Lines starting with `PORT:` list the device, firmware, screen, memory and swap, the state of the setup, and at the end how long the game ran and whether the system ran out of memory.
 
 ## Thanks
 
