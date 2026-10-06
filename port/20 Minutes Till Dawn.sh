@@ -31,6 +31,11 @@ DATADIR=$GAMEDIR/gamedata
 cd "$GAMEDIR"
 
 > "$GAMEDIR/log.txt" && exec > >(tee "$GAMEDIR/log.txt") 2>&1
+# Device, system and memory details for bug reports (tools/portlog.sh)
+# The files a bug report needs; named in log.txt and on screen only when something fails
+export PORT_REPORT_FILES="ports/20minutestilldawn/log.txt, setup_log.txt and player.log"
+source "$GAMEDIR/tools/portlog.sh"
+port_header "20 Minutes Till Dawn launcher"
 
 if [ ! -f "$DATADIR/MinutesTillDawn.x86_64" ] && [ ! -d "$DATADIR/20MinutesTillDawn.app" ]; then
   pm_message "Game files missing. Copy 20MinutesTillDawn.app from the Steam (macOS) download into ports/20minutestilldawn/gamedata (see README)."
@@ -44,16 +49,22 @@ chmod a+x "$GAMEDIR/box64/box64"
 # The stamp covers every file the setup creates or changes.
 patch_stamp() { (cd "$DATADIR" && bash "$GAMEDIR/tools/stamp.sh"); }
 setup_done() { [ -s .patch_stamp ] && [ "$(cat .patch_stamp)" = "$(patch_stamp)" ]; }
+port_files "$DATADIR/MinutesTillDawn.x86_64" "$DATADIR/UnityPlayer.so" "$DATADIR/MinutesTillDawn_Data/Managed/Assembly-CSharp.dll"
+if setup_done; then port_log "setup: up to date"; else port_log "setup: needed (first run, game update or changed files)"; fi
 if ! setup_done; then
   export GAMEDIR DATADIR DEVICE_ARCH controlfolder
   chmod +x "$GAMEDIR/tools/patchscript"
   export PATCHER_FILE="$GAMEDIR/tools/patchscript"
   export PATCHER_GAME="20 Minutes Till Dawn"
   export PATCHER_TIME="about a minute"
+  port_log "running the setup (tools/patchscript), its log is setup_log.txt"
   source "$controlfolder/utils/patcher.txt"
   # tools/patchscript writes the stamp only when every file checked out
   if ! setup_done; then
-    pm_message "Preparing the game failed. See ports/20minutestilldawn/setup_log.txt and the README."
+    port_log "setup stamp mismatch: $(wc -l < .patch_stamp 2>/dev/null || echo 0) lines saved, $(patch_stamp | wc -l) files now"
+    port_log "setup failed"
+    port_report
+    pm_message "Preparing the game failed. See ports/20minutestilldawn/setup_log.txt and the README. To report it, send $PORT_REPORT_FILES."
     sleep 8
     pm_finish
     exit 1
@@ -98,6 +109,7 @@ if [[ "$PM_CAN_MOUNT" != "N" ]]; then
   $ESUDO umount "${weston_dir}"
 fi
 $ESUDO mount "$controlfolder/libs/${weston_runtime}.squashfs" "${weston_dir}"
+port_mounted "$weston_runtime" "$weston_dir/westonwrap.sh"
 
 # The Unity player has an older SDL built in, which numbers a pad's buttons differently from the
 # SDL that PortMaster's mapping (SDL_GAMECONTROLLERCONFIG) was written for: key codes from
@@ -156,11 +168,13 @@ fi
 # Only the game gets the renumbered mapping: gptokeyb is a current SDL program. (westonwrap evals
 # its arguments, so a value with spaces cannot be passed to it as VAR=value.)
 export SDL_GAMECONTROLLERCONFIG="$unity_mapping"
+port_log "controller mapping for the game: $(printf '%s\n' "$SDL_GAMECONTROLLERCONFIG" | head -n 1)"
 
 # westonwrap replaces XDG_RUNTIME_DIR; pass the real one on so the game's audio reaches PipeWire.
 REAL_XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 pm_platform_helper "$GAMEDIR/box64/box64"
 cd "$DATADIR"
+port_log "starting the game"
 # crusty_glx gives the Unity player an OpenGL ES 3 context through GLX; glespass is the libGL.so.1
 # that box64's GL wrapper loads, passing the player's GL calls straight to the GLES driver.
 # Unity renders on its own thread; GLESPASS_CTXFIX moves the EGL context to that thread when the
@@ -172,7 +186,7 @@ cd "$DATADIR"
 # port, where it left only the UI on screen).
 $ESUDO env WRAPPED_LIBRARY_PATH="$GAMEDIR/glespass" GLESPASS_CTXFIX=1 \
   GLESPASS_VENDOR=Generic GLESPASS_RENDERER=GLES-device \
-  BOX64_LD_LIBRARY_PATH="$GAMEDIR/box64/box64-x86_64-linux-gnu" \
+  BOX64_SHOWSEGV=1 BOX64_SHOWBT=1 BOX64_LD_LIBRARY_PATH="$GAMEDIR/box64/box64-x86_64-linux-gnu" \
   $weston_dir/westonwrap.sh headless noop kiosk crusty_glx \
   XDG_RUNTIME_DIR="$REAL_XDG_RUNTIME_DIR" HOME="$GAMEDIR/conf" XDG_CONFIG_HOME="$GAMEDIR/conf" \
   "$GAMEDIR/box64/box64" ./MinutesTillDawn.x86_64 -screen-fullscreen 1 \
@@ -182,9 +196,10 @@ $ESUDO env WRAPPED_LIBRARY_PATH="$GAMEDIR/glespass" GLESPASS_CTXFIX=1 \
 # for a bug report.
 if [ -f "$GAMEDIR/player.log" ]; then
   echo "--- end of player.log (full log: ports/20minutestilldawn/player.log)"
-  tail -n 40 "$GAMEDIR/player.log"
+  tail -n 100 "$GAMEDIR/player.log"
 fi
 
+port_exit
 $ESUDO $weston_dir/westonwrap.sh cleanup
 if [[ "$PM_CAN_MOUNT" != "N" ]]; then
   $ESUDO umount "${weston_dir}"

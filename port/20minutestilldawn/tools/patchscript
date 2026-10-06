@@ -11,8 +11,10 @@
 #   Each file is checked by MD5 before and after, so only the supported Steam build is patched, and
 #   a file already patched is left alone.
 # PortMaster's patcher only shows this output on screen; keep a copy for bug reports.
-exec > >(tee "$GAMEDIR/setup_log.txt") 2>&1
-echo "$(date) ${CFW_NAME:-} ${DEVICE_NAME:-} ${DEVICE_ARCH:-}" >&2
+# Device, system and memory details first (tools/portlog.sh), then everything this script prints
+source "$GAMEDIR/tools/portlog.sh"
+port_header "20 Minutes Till Dawn setup" > "$GAMEDIR/setup_log.txt"
+exec > >(tee -a "$GAMEDIR/setup_log.txt") 2>&1
 cd "$DATADIR" || exit 1
 SEVENZIP="$controlfolder/7zzs.$DEVICE_ARCH"
 XDELTA="$controlfolder/xdelta3"
@@ -148,7 +150,12 @@ done <<< "$FILES"
 if [ "$failed" = 0 ]; then
   cd "$DATADIR" && bash "$GAMEDIR/tools/stamp.sh" > "$GAMEDIR/.patch_stamp"
   echo "Done. Starting the game."
+  port_log "setup finished in ${SECONDS}s"
+  port_mem end
 else
   echo "Setup failed. This port supports the current Steam (macOS) build of the game."
   echo "Download it again (see the README), copy it and retry."
+  echo "To report a problem, send ${PORT_REPORT_FILES:-setup_log.txt}."
+  port_log "setup FAILED after ${SECONDS}s"
+  port_mem end
 fi
