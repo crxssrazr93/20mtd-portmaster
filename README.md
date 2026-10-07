@@ -6,7 +6,7 @@ The game has Windows and macOS builds only. The Windows build carries Direct3D 1
 
 | | |
 |--|--|
-| Status | Runs on an Anbernic RG35XX H (Knulli, Mali G31, 1 GB): menus, runs, level ups and death screen with the controller and sound, 30 fps in a run. |
+| Status | Runs on an Anbernic RG35XX H (Knulli and muOS, Mali G31, 1 GB): menus, runs, level ups and death screen with the controller and sound, 30 fps in a run. |
 | Tester reports (first release) | R36H (dArkOS): starts after about 3 minutes, the controls do nothing in game. RG40XX-H (muOS): setup fails. Both are open; the launcher logs much more since (pad details, setup log), so logs from the current release are needed. |
 | Target | aarch64 PortMaster devices with an OpenGL ES 3 GPU, 1 GB RAM or more |
 | Runtimes | Westonpack (`weston_pkg_0.2`, crusty_glx), bundled box64 and glespass |
@@ -31,7 +31,7 @@ All changes are made on the device to your own copy, from xdelta patches checked
 * Shaders: GLCore GLSL rewritten to GLSL ES 3.00 in five files (`setup/gles_shaders2019.py`).
 * Load time: pooled effects expire without `Invoke`/`CancelInvoke` (`setup/ttl_patch.cs`), and the run's object pools start smaller (they grow on demand).
 * Small screens: the UI canvas is laid out for 640 units wide, the small pixel font is redrawn for 12 px and used at that size (`setup/font_rescale.py`), and a few panels are resized to fit (`setup/ui_levels.py`). On screens up to 800 wide the launcher turns off the game's 16:9 crop so the view fills the screen.
-* Input: the launcher renumbers pad buttons for the Unity player's built in SDL and maps the D-pad to movement.
+* Input: the launcher renumbers pad buttons for the Unity player's built in SDL and maps the D-pad to movement. The mapping is passed to the game as a Westonpack argument, because Westonpack reloads PortMaster's settings and on muOS that replaced it (only the sticks and L2 worked).
 
 ## Building
 

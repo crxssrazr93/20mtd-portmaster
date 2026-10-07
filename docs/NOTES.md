@@ -54,3 +54,10 @@ The freeze when firing starts (one frame of 400 to 770 ms, in every run) is firs
 * Verify D-pad movement with the remap, and START (pause) behaviour (on PC the frame froze without a visible menu in both GLES and desktop GL runs, so not a port regression; check on the device).
 * Long run memory check (20 minutes of hordes). Startup: not the JIT (a full JIT warmup takes 8.7 s); the run load is one frame of about 39 s.
 * README, port.json, gameinfo.xml, screenshot, licenses (game scope), repo staging.
+
+## Controller on muOS
+
+On muOS only the sticks and L2 worked. Westonpack's `westonwrap.sh` sources PortMaster's `control.txt` again before it starts the game, and muOS's `control.txt` exports the original `SDL_GAMECONTROLLERCONFIG`, so the mapping the launcher had renumbered for the Unity player's SDL was replaced (Knulli's `control.txt` does not export it, which is why it worked there). The launcher now passes the mapping as a `VAR=value` argument to `westonwrap.sh`, which applies it to the game itself. `westonwrap.sh` evals its arguments, so the mapping is passed as one line with the spaces in the pad's name replaced (SDL matches the GUID, not the name). Tested on an RG35XX H with muOS: menus, Options, a run with movement, R2 to fire, Start to pause, and the exit hotkey.
+
+PortMaster also expects the line `# PORTMASTER: <zip>, <script>` at the top of the launcher. Without it, harbourmaster inserts the line the first time it downloads a runtime, which broke a launcher that was running at the time.
+
