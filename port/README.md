@@ -24,6 +24,8 @@ The game reads the pad itself. Buttons are named as the game's prompts show them
 
 ## Notes
 
+On 1 GB devices turn on zram (or swap) in your firmware's settings, so the game does not run out of memory.
+
 Runs through box64 and Westonpack on Unity's own Linux player. Small screens get larger menu text and a full screen view (no 16:9 bars). Steam features (achievements, the Endless leaderboard) are not available.
 
 Source and build instructions: https://github.com/crxssrazr93/20mtd-portmaster
