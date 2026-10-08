@@ -207,10 +207,14 @@ port_log "starting the game"
 # on screen.
 # GLESPASS_FPSCAP holds the frame rate at a steady 30: uncapped it swings between 33 and 47 fps,
 # with frames from 22 to 60 ms, which looks choppy on a 60 Hz screen. MTD_FPS overrides it (0 = off).
+# box64's settings go to westonwrap as VAR=value arguments, which it puts on the game's command
+# line: westonwrap sources PortMaster's control files first, and on ROCKNIX the game then started
+# with the firmware's BOX64_LD_LIBRARY_PATH (/usr/share/box64/lib) instead of the port's, so box64
+# could not find the game's libraries. BOX64_LOG=1 names a library that fails to load.
 $ESUDO env WRAPPED_LIBRARY_PATH="$GAMEDIR/glespass" GLESPASS_CTXFIX=1 \
   GLESPASS_VENDOR=Generic GLESPASS_RENDERER=GLES-device GLESPASS_FPSCAP="${MTD_FPS:-30}" \
-  BOX64_LD_LIBRARY_PATH="$GAMEDIR/box64/box64-x86_64-linux-gnu" \
   $weston_dir/westonwrap.sh headless noop kiosk crusty_glx \
+  BOX64_LOG=1 BOX64_LD_LIBRARY_PATH="$GAMEDIR/box64/box64-x86_64-linux-gnu" \
   ${unity_mapping:+SDL_GAMECONTROLLERCONFIG="$unity_mapping"} XDG_RUNTIME_DIR="$REAL_XDG_RUNTIME_DIR" HOME="$GAMEDIR/conf" XDG_CONFIG_HOME="$GAMEDIR/conf" \
   "$GAMEDIR/box64/box64" ./MinutesTillDawn.x86_64 -screen-fullscreen 1 \
   -screen-width "$DISPLAY_WIDTH" -screen-height "$DISPLAY_HEIGHT" -logFile "$GAMEDIR/player.log"
