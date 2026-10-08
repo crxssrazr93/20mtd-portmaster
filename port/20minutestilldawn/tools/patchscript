@@ -166,6 +166,8 @@ while IFS='|' read -r file orig patched; do
   fi
   if [ ! -f "$file" ]; then
     echo "  missing: copy the whole 20MinutesTillDawn.app again."
+    # a file with that name elsewhere in gamedata/ shows how the copy went wrong
+    find "$DATADIR" -name "$(basename "$file")" -type f 2>/dev/null | head -n 3 | sed "s|^$DATADIR/|  found at gamedata/|"
     failed=1
     continue
   fi
@@ -192,6 +194,8 @@ if [ "$failed" = 0 ]; then
   port_log "setup finished in ${SECONDS}s"
   port_mem end
 else
+  # for bug reports: what the game folder holds (names and sizes, log file only)
+  { echo "gamedata contents:"; (cd "$DATADIR" && find . -maxdepth 4 -type f ! -path "*/MonoBleedingEdge/*" ! -path "*/Managed/*" -exec ls -ln {} + 2>/dev/null | awk '{s = $5; for (i = 1; i <= 8; i++) $i = ""; sub(/^ +/, ""); print s, $0}' | sort -k2 | head -n 120); } >> "$GAMEDIR/setup_log.txt"
   echo "Setup failed. This port supports the current Steam (macOS) build of the game."
   echo "Download it again (see the README), copy it and retry."
   echo "To report a problem, send ${PORT_REPORT_FILES:-setup_log.txt}."
