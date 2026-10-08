@@ -64,8 +64,24 @@ player_ok() {
 
 echo "Step 1 of 10: Unity Linux player"
 # Step 2 needs the data folder in place before the player's files go into it
-if [ ! -d "$DATA" ] && [ -d "$APP/Contents/Resources/Data" ]; then
-  mv "$APP/Contents/Resources/Data" "$DATA" || exit 1
+if [ -d "$APP/Contents/Resources/Data" ]; then
+  if [ -d "$DATA" ]; then
+    # The game was copied again over a prepared copy: its data replaces the old, which may be
+    # incomplete or from another version. The Linux player's own parts are kept (Mono and its
+    # unity default resources; the macOS app has neither in that form).
+    rm -rf "$DATA.new"
+    mv "$APP/Contents/Resources/Data" "$DATA.new" || exit 1
+    if [ -d "$DATA/MonoBleedingEdge" ]; then
+      rm -rf "$DATA.new/MonoBleedingEdge" && mv "$DATA/MonoBleedingEdge" "$DATA.new/" || exit 1
+    fi
+    if [ -f "$DATA/Resources/unity default resources" ]; then
+      mkdir -p "$DATA.new/Resources" &&
+        mv -f "$DATA/Resources/unity default resources" "$DATA.new/Resources/" || exit 1
+    fi
+    rm -rf "$DATA" && mv "$DATA.new" "$DATA" || exit 1
+  else
+    mv "$APP/Contents/Resources/Data" "$DATA" || exit 1
+  fi
 fi
 if [ ! -d "$DATA" ]; then
   echo "  The game files are missing: copy 20MinutesTillDawn.app into"
@@ -146,6 +162,11 @@ while IFS='|' read -r file orig patched; do
       echo "  update failed."
       failed=1
     fi
+    continue
+  fi
+  if [ ! -f "$file" ]; then
+    echo "  missing: copy the whole 20MinutesTillDawn.app again."
+    failed=1
     continue
   fi
   if [ "$sum" != "$orig" ]; then

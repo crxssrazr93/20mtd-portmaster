@@ -4,7 +4,7 @@ Buy the game on [Steam](https://store.steampowered.com/app/1966900/20_Minutes_Ti
 
 `download_depot 1966900 1966902`
 
-Copy `20MinutesTillDawn.app` into `ports/20minutestilldawn/gamedata/`. The first start downloads Unity's Linux player for the game's engine version (57 MB, needs internet) and patches your copy for the device (a few minutes, again after a game update). Without internet, download [UnitySetup-Linux-Mono-Support-for-Editor-2019.4.40f1.exe](https://download.unity3d.com/download_unity/ffc62b691db5/TargetSupportInstaller/UnitySetup-Linux-Mono-Support-for-Editor-2019.4.40f1.exe) on a computer and put it in `gamedata/` too. If the first start fails, the reason is in `ports/20minutestilldawn/setup_log.txt`.
+Copy `20MinutesTillDawn.app` into `ports/20minutestilldawn/gamedata/`. The first start downloads Unity's Linux player for the game's engine version (57 MB, needs internet) and patches your copy for the device (a few minutes, again after a game update). Without internet, download [UnitySetup-Linux-Mono-Support-for-Editor-2019.4.40f1.exe](https://download.unity3d.com/download_unity/ffc62b691db5/TargetSupportInstaller/UnitySetup-Linux-Mono-Support-for-Editor-2019.4.40f1.exe) on a computer and put it in `gamedata/` too. If the first start fails, the reason is in `ports/20minutestilldawn/setup_log.txt`. If files are missing or damaged, copy `20MinutesTillDawn.app` again: the next start replaces the game data with it.
 
 ## Controls
 

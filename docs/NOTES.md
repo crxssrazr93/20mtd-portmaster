@@ -61,3 +61,7 @@ On muOS only the sticks and L2 worked. Westonpack's `westonwrap.sh` sources Port
 
 PortMaster also expects the line `# PORTMASTER: <zip>, <script>` at the top of the launcher. Without it, harbourmaster inserts the line the first time it downloads a runtime, which broke a launcher that was running at the time.
 
+
+## Copying the game again over a prepared install
+
+A muOS tester's setup failed with `level0`, `level1` and `Resources/unity_builtin_extra` missing from `MinutesTillDawn_Data`, reported as "unexpected version (MD5 )" with an empty checksum. Copying the game again would not have helped: step 1 only took the data out of `20MinutesTillDawn.app` when `MinutesTillDawn_Data` did not exist yet, and step 2 then deleted the app, fresh data and all. Now a copied app always replaces the game data, keeping only the Linux player's own parts (`MonoBleedingEdge` and `Resources/unity default resources`), and a missing file says so and asks for the whole app again. Tested on the PC: a prepared copy with three files deleted and two outdated, then the app copied over it, patched all ten steps and started; a rerun found everything up to date.
