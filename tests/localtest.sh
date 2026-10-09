@@ -21,8 +21,9 @@ RES="${1:-640x480}"; SCRIPT="$2"; TAG="${3:-run}"; D=${DISP:-9}
 OUT="$T/out/$TAG"; mkdir -p "$OUT"; rm -f "$OUT"/*.png "$OUT"/rss.log
 H="$T/out/home-$TAG"; [ "${FRESH:-0}" = 1 ] && rm -rf "$H"; mkdir -p "$H"
 while [ -e "/tmp/.X$D-lock" ]; do sleep 0.5; done
-unset WAYLAND_DISPLAY; Xvfb :$D -screen 0 "$RES"x24 -nolisten tcp >/dev/null 2>&1 & XPID=$!
+unset WAYLAND_DISPLAY; export SDL_VIDEODRIVER=x11 XDG_RUNTIME_DIR=/tmp/xdg-offscreen; mkdir -p -m 700 /tmp/xdg-offscreen; Xvfb :$D -screen 0 "$RES"x24 -nolisten tcp >/dev/null 2>&1 & XPID=$!
 for i in $(seq 40); do DISPLAY=:$D xdpyinfo >/dev/null 2>&1 && break; sleep 0.5; done
+DISPLAY=:$D xdpyinfo >/dev/null 2>&1 || { echo "offscreen X server :$D did not start"; kill $XPID 2>/dev/null; exit 1; }
 before=$(ls /dev/input/)
 SHOT_CMD="DISPLAY=:$D import -window root $OUT/{name}.png 2>/dev/null" python3 "$T/vpad.py" "wait 2; $SCRIPT" & VPID=$!
 sleep 2
