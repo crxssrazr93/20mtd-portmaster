@@ -74,6 +74,10 @@ fi
 #   to 16:9 and stretch it, which letterboxes 4:3 and square screens. On screens up to 800 pixels
 #   wide the game draws at 1:1 scale anyway, so there the crop is turned off and the picture fills
 #   the screen at the same scale; wider screens keep the game's own scaling.
+# * fix: the flashing copy of the XP bar shown with the upgrade menu (XPBarAnimation) is sized
+#   from the canvas height and only matches the bar on a 16:9 canvas; with the crop off it grew
+#   into a band across the top that covered the hearts and the timer. It is anchored to the top
+#   with the bar's own height instead, which is the same on 16:9.
 apply_level_edits() {
   local kind file off orig new name want cur
   while read -r kind file off orig new name; do

@@ -2,7 +2,7 @@
 """Virtual Xbox-style gamepad over uinput, driven by a simple script of steps.
 
 Usage: vpad.py "wait 8; press A; wait 2; hold right 1.5; press START; shot name"
-Steps: wait <s> | press <BTN> | tap <stick-dir|dpad-dir> | hold <BTN|left|right|up|down> <s> | shot <name>
+Steps: wait <s> | press <BTN> | tap <stick-dir|dpad-dir> | hold <BTN|left|right|up|down|LT|RT> <s> | shot <name>
        on <BTN|stick-dir|dpad-dir> | off <same>   (held input across other steps)
        stick-dir: left right up down (analog stick); dpad-dir: dleft dright dup ddown
        rec <name> | stoprec   (screen recording via $REC_CMD)
@@ -14,13 +14,15 @@ from evdev import UInput, ecodes as e, AbsInfo
 BTN = {'A': e.BTN_SOUTH, 'B': e.BTN_EAST, 'X': e.BTN_WEST, 'Y': e.BTN_NORTH,
        'LB': e.BTN_TL, 'RB': e.BTN_TR, 'SELECT': e.BTN_SELECT, 'START': e.BTN_START}
 AXIS = {'left': (e.ABS_X, -32767), 'right': (e.ABS_X, 32767),
-        'up': (e.ABS_Y, -32767), 'down': (e.ABS_Y, 32767)}
+        'up': (e.ABS_Y, -32767), 'down': (e.ABS_Y, 32767),
+        'LT': (e.ABS_Z, 255), 'RT': (e.ABS_RZ, 255)}
 HAT = {'dleft': (e.ABS_HAT0X, -1), 'dright': (e.ABS_HAT0X, 1),
        'dup': (e.ABS_HAT0Y, -1), 'ddown': (e.ABS_HAT0Y, 1)}
 caps = {
     e.EV_KEY: list(BTN.values()) + [e.BTN_MODE, e.BTN_THUMBL, e.BTN_THUMBR],
     e.EV_ABS: [(a, AbsInfo(0, -32768, 32767, 16, 128, 0)) for a in (e.ABS_X, e.ABS_Y, e.ABS_RX, e.ABS_RY)]
-              + [(a, AbsInfo(0, -1, 1, 0, 0, 0)) for a in (e.ABS_HAT0X, e.ABS_HAT0Y)],
+              + [(a, AbsInfo(0, -1, 1, 0, 0, 0)) for a in (e.ABS_HAT0X, e.ABS_HAT0Y)]
+              + [(a, AbsInfo(0, 0, 255, 0, 0, 0)) for a in (e.ABS_Z, e.ABS_RZ)],
 }
 pad = UInput(caps, name='Microsoft X-Box 360 pad', vendor=0x045e, product=0x028e, version=0x110)
 time.sleep(1.0)

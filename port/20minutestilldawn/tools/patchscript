@@ -136,7 +136,7 @@ rm -rf "$APP"
 echo "  done"
 
 cd "$DATA" || exit 1
-# the launcher sets the camera crop bytes in the level files for the screen (tools/level_edits.txt);
+# the launcher edits bytes in the level files on every start (tools/level_edits.txt: camera crop, XP bar);
 # put them back so the MD5 checks below see the patched files
 while read -r kind file off orig new name; do
   [ "$(od -An -tx1 -j "$off" -N$(( ${#orig} / 2 )) "$file" 2>/dev/null | tr -d ' \n')" = "$new" ] &&

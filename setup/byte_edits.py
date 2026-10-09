@@ -1,7 +1,12 @@
 """Writes the fixed-offset byte edits the launcher applies to the game's level files (supported
 Steam build, macOS depot) as port/20minutestilldawn/tools/level_edits.txt lines:
   kind file offset original-bytes new-bytes [name]     (bytes in hex)
-Three kinds:
+Four kinds:
+  fix    XPBarAnimation, the flashing copy of the XP bar shown with the upgrade menu, stretches
+         over the whole canvas with a height of canvas height - 428.95, which is the bar's 21
+         units only on a 16:9 canvas (450 high); with the crop off on 4:3 and square screens the
+         canvas is taller and it became a band across the top of the screen covering the hearts
+         and the timer. Anchored to the top with the bar's height instead, as XPBar itself is.
   crop   Crop Frame X/Y flags of the Pixel Perfect Cameras (two int32 per camera); the launcher
          turns them off only on screens up to 800 pixels wide
   ui     Reference resolution of the screen space Canvas Scalers (Scale With Screen Size, Expand),
@@ -17,6 +22,7 @@ import os, struct, sys
 import UnityPy
 
 UI_REF = (640.0, 450.0)
+XP_FLASH = 'XPBarAnimation'
 GUN_GRID = ('Buttons', 'GunMenu', -206.0)   # name, parent, new size delta x (was -365.96)
 
 # initial pool sizes (original in the comment); items not listed keep theirs
@@ -39,6 +45,17 @@ def main():
     for f in ['level0', 'level1', 'sharedassets0.assets']:
         env = UnityPy.load(os.path.join(d, f))
         for o in env.objects:
+            if o.type.name == 'RectTransform' and f == 'level1':
+                rt = o.read()
+                if rt.m_GameObject.read().m_Name == XP_FLASH:
+                    # m_AnchorMin, m_AnchorMax, m_AnchoredPosition, m_SizeDelta, m_Pivot end the object
+                    raw = o.get_raw_data(); off = len(raw) - 40
+                    amx, amy, bmx, bmy, ax, ay, sx, sy, px, py = struct.unpack_from('<10f', raw, off)
+                    assert (amy, bmy, ay) == (0.0, 1.0, rt.m_AnchoredPosition.y), XP_FLASH
+                    h = 450.0 + sy                       # its height on the 16:9 canvas (21.05)
+                    top = 450.0 / 2 + ay + sy * (1 - py)  # its top edge there, from the canvas middle
+                    new = struct.pack('<8f', amx, 1.0, bmx, 1.0, ax, top - 450.0 / 2 - h * (1 - py), sx, h)
+                    print(f'fix {f} {o.byte_start + off} {raw[off:off + 32].hex()} {new.hex()} {XP_FLASH}')
             if o.type.name == 'RectTransform' and f == 'level0':
                 rt = o.read()
                 if (rt.m_GameObject.read().m_Name == GUN_GRID[0] and rt.m_Father.path_id and
