@@ -211,10 +211,15 @@ port_log "starting the game"
 # line: westonwrap sources PortMaster's control files first, and on ROCKNIX the game then started
 # with the firmware's BOX64_LD_LIBRARY_PATH (/usr/share/box64/lib) instead of the port's, so box64
 # could not find the game's libraries. BOX64_LOG=1 names a library that fails to load.
+# box64 recognises the Mono runtime and then forces BOX64_DYNAREC_BIGBLOCK=0 and STRONGMEM=1,
+# which overrides any dynarec setting given here; BLEEDING_EDGE=0 turns that off. On an RG35XX H
+# (frame cap off) runs went from 27 to 31 fps to 37 to 41, and a run loads in 30 s instead of 39.
+# STRONGMEM=1 keeps the safe memory ordering for Mono's threads.
 $ESUDO env WRAPPED_LIBRARY_PATH="$GAMEDIR/glespass" GLESPASS_CTXFIX=1 \
   GLESPASS_VENDOR=Generic GLESPASS_RENDERER=GLES-device GLESPASS_FPSCAP="${MTD_FPS:-30}" \
   $weston_dir/westonwrap.sh headless noop kiosk crusty_glx \
   BOX64_LOG=1 BOX64_LD_LIBRARY_PATH="$GAMEDIR/box64/box64-x86_64-linux-gnu" \
+  BOX64_DYNAREC_BLEEDING_EDGE=0 BOX64_DYNAREC_STRONGMEM=1 BOX64_DYNAREC_BIGBLOCK=2 \
   ${unity_mapping:+SDL_GAMECONTROLLERCONFIG="$unity_mapping"} XDG_RUNTIME_DIR="$REAL_XDG_RUNTIME_DIR" HOME="$GAMEDIR/conf" XDG_CONFIG_HOME="$GAMEDIR/conf" \
   "$GAMEDIR/box64/box64" ./MinutesTillDawn.x86_64 -screen-fullscreen 1 \
   -screen-width "$DISPLAY_WIDTH" -screen-height "$DISPLAY_HEIGHT" -logFile "$GAMEDIR/player.log"

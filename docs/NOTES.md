@@ -49,6 +49,21 @@ Only audio disabled entirely stood out (46.2 fps, 9 frames over 50 ms), which is
 
 The freeze when firing starts (one frame of 400 to 770 ms, in every run) is first use cost: about 100 ms of it is shader compiles (glespass appends `shaders N in X ms` to the FPS log line), the rest is new code running for the first time (box64 translating the freshly JIT compiled methods) and first draws of the effects. The JIT warmup shows the JIT is not the part that costs. Fights are bound by the emulated CPU work of the game's scripts.
 
+## box64's Mono profile (2026-10-09, RG35XX H)
+
+box64 0.4.4 recognises the Mono runtime and then forces `BOX64_DYNAREC_BIGBLOCK=0` and `STRONGMEM=1`, overriding whatever the launcher sets, so the box64 results above (CALLRET, BIGBLOCK=0 alone, the combined profile) all ran with the same forced settings and are not real negatives. `BOX64_DYNAREC_BLEEDING_EDGE=0` switches the override off.
+
+Benchmark: start a Quickplay run from the title, wait until it has loaded (presented frames above 20/s), then run a square with the D-pad (3 s per side) while holding R2, and count presented frames (framebuffer page flips) from 3 to 18 s into the run, before any death screen. Frame cap off. Two runs each:
+
+| box64 settings | Title | Run | Run load |
+| :-- | :-- | :-- | :-- |
+| none (Mono profile: BIGBLOCK 0, STRONGMEM 1) | 56 to 57 | 27.0, 31.1 | 39 s |
+| BLEEDING_EDGE 0, STRONGMEM 1, BIGBLOCK 2 (shipped) | 60 | 41.3, 37.1 | 30 to 31 s |
+| BLEEDING_EDGE 0, STRONGMEM 1, BIGBLOCK 3 | 60 | 38.5, 37.1 | 28 to 31 s |
+| BLEEDING_EDGE 0 (box64 defaults: STRONGMEM 0, BIGBLOCK 1) | 60 | 37.8, 37.8 | 29 s |
+
+The launcher passes `BLEEDING_EDGE=0 STRONGMEM=1 BIGBLOCK=2`, keeping the strong memory ordering for Mono's threads. With the shipped 30 fps cap this mostly shows as headroom: fights that dropped below 30 now stay above it, and runs load faster.
+
 ## To do
 
 * Verify D-pad movement with the remap, and START (pause) behaviour (on PC the frame froze without a visible menu in both GLES and desktop GL runs, so not a port regression; check on the device).

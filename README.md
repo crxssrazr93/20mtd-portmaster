@@ -6,7 +6,7 @@ The game has Windows and macOS builds only. The Windows build carries Direct3D 1
 
 | | |
 |--|--|
-| Status | Runs on an Anbernic RG35XX H (Knulli and muOS, Mali G31, 1 GB): menus, runs, level ups and death screen with the controller and sound, 30 fps in a run. |
+| Status | Runs on an Anbernic RG35XX H (Knulli and muOS, Mali G31, 1 GB): menus, runs, level ups and death screen with the controller and sound, a steady 30 fps in a run (37 to 41 uncapped). |
 | Tester reports (first release) | R36H (dArkOS): starts after about 3 minutes, the controls do nothing in game. RG40XX-H (muOS): setup fails. Both are open; the launcher logs much more since (pad details, setup log), so logs from the current release are needed. |
 | Target | aarch64 PortMaster devices with an OpenGL ES 3 GPU, 1 GB RAM or more |
 | Runtimes | Westonpack (`weston_pkg_0.2`, crusty_glx), bundled box64 and glespass |
