@@ -50,15 +50,26 @@ Scenarios: `idle` (nothing pressed during the run: the player stands still and d
 
 `log_scan.py` counts shader compile and link failures, "not supported", "fallback" and error shader lines in `player.log` and `game.out` per shader name.
 
-## Results
+## Results (2026-10-13)
 
-See `out/summary.txt` after a run (the numbers of the last run are summarised in the commit message and in the report that came with this harness).
+PC, desktop GL reference (`cmp-ref`) against the port's GLES programs (`cmp-port`), 2 scenarios, 2 to 3 runs of each build, 22 frames per run: every frame is identical or differs by at most 1 level of 255 (rounding), except frames where the game itself diverges between two runs of the same build (death particles), which stay inside that spread. 0 unexplained differences. The shader log scan finds no compile, link or fallback errors (its one hit per run is the GL extension list, which contains `GL_KHR_no_error`, in the reference runs too).
+
+RG35XX H (Knulli, Mali-G31, the port's real path: box64, glespass, Westonpack, crusty_glx) against the PC reference, idle and shoot:
+
+* Title screen frames: identical.
+* Battle frames: 68 to 96% of pixels differ by 1 or 2 levels (mean 0.5), the Mali rasteriser and blending rounding differently from Mesa. No banding: the vision light gradient, fog and particles stay within 2 levels everywhere.
+* At most 0.2% of pixels differ by more than 2, and every such spot is a 1 pixel tall UI element (the hint text row, the reload bar, the results separator) drawn on the neighbouring pixel row: geometry at a half pixel position that the two GPUs round to opposite rows. Not a shader difference.
+* The device run follows the same game states for the whole run (shoot scenario included), so the frames compare one to one.
+
+Conclusion: the converted shaders render the game as the original shaders do, on PC and on the Mali GPU, with the port's precision (highp floats, ints and samplers).
 
 ## On the device
 
-Do the same with the same data, nothing else changes: the pictures only mean something when the game states are the same.
+`device/20MTD Compare.sh` is a test launcher (never shipped) that runs the port's own game path with PortCapture. Steps used for the results above:
 
-1. Use the port as installed and set up on the device (so its `MinutesTillDawn_Data` is the port's patched data). From `cmp-port` copy `MinutesTillDawn_Data/Managed/PortCapture.dll`, `Assembly-CSharp.dll`, `DOTween.dll`, `UnityEngine.UI.dll` and `Unity.TextMeshPro.dll` into the device's `MinutesTillDawn_Data/Managed/` (keep the originals; the port's launcher checks `Assembly-CSharp.dll` through its setup MD5s, so run this on a test copy of the port folder or restore the originals afterwards and delete the setup stamp if it complains).
-2. In a copy of the launcher, export before the game starts: `PORTCAP_DIR=$GAMEDIR/portcap`, `PORTCAP_FRAMES` and `PORTCAP_INPUT` exactly as `runs/<tag>/env.txt` of the PC run (written by `run_capture.sh`), `PORTCAP_SEED=1234`. Westonpack's `westonwrap.sh` takes `VAR=value` arguments for the game, as the launcher does for box64 (see the existing launcher lines).
-3. Use the same resolution as the PC run (`-screen-width 640 -screen-height 480`) and the port's normal GL path (glespass, crusty_glx). The speed of the device does not matter: the simulation advances 1/30 s per rendered frame whatever the real frame rate (expect a long run; the 30 fps cap is irrelevant).
-4. Wait for `PortCapture: done` in `player.log`, copy `portcap/*.png` to `tests/compare/runs/dev_<scenario>_1/frames/` on the PC and compare with the PC desktop GL reference: `tests/compare/compare.py ref_<scenario>_1 dev_<scenario>_1`. Expect the same pictures within GPU rounding (the Mali rasteriser is not llvmpipe, so single level differences in gradients are normal); flat colour differences, missing or wrong coloured sprites, or a different blend are shader bugs. Run the device twice first and compare the two runs with `--strict` to see how repeatable the device is.
+1. On the device, make `ports/20mtdcmp` from the installed port (`gamedata`, `box64`, `glespass`, `tools`), then copy `PortCapture.dll`, `Assembly-CSharp.dll`, `DOTween.dll`, `UnityEngine.UI.dll` and `Unity.TextMeshPro.dll` from `cmp-port/MinutesTillDawn_Data/Managed/` into its `gamedata/MinutesTillDawn_Data/Managed/`. Check first that the shader carrying assets and level files are byte identical to `cmp-port` (md5sum).
+2. Copy the launcher to `ports/`, reload the game list (`curl localhost:1234/reloadgames`), write `ports/20mtdcmp/run.cfg` (`SCEN=idle` or `shoot`, `TAG=dev_<scen>_1`) and launch it (`curl -d "<path>" localhost:1234/launch`).
+3. Turn address space randomisation off for the runs (`echo 0 > /proc/sys/kernel/randomize_va_space`, as `setarch -R` on the PC) and back on afterwards (`echo 2`).
+4. PortCapture disables every real input device inside the game (`PORTCAP_ONLYPAD`, default on), so stick drift on the handheld cannot change the run. Do not hide `/dev/input` instead: Westonpack's seatd aborts without input devices.
+5. When `PortCapture: done` is in `portcap/<tag>/player.log`, stop the game (`curl localhost:1234/emukill`), copy `portcap/<tag>/frames` to `runs/<tag>/frames` here and run `./compare.py ref_<scen>_1 dev_<scen>_1`.
+6. Remove `ports/20mtdcmp` and the launcher from the device afterwards.

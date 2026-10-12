@@ -151,6 +151,14 @@ public class PortCaptureBehaviour : MonoBehaviour
         Application.runInBackground = true;
         InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
         pad = InputSystem.AddDevice<Gamepad>("PortCapture pad");
+        // only the virtual pad drives the game: a real pad (stick drift on a handheld), keyboard or
+        // pointer would make the device and PC runs differ (PORTCAP_ONLYPAD=0 keeps them)
+        if (Env("PORTCAP_ONLYPAD", "1") == "1") {
+            foreach (var d in InputSystem.devices) DisableReal(d);
+            InputSystem.onDeviceChange += (d, change) => {
+                if (change == InputDeviceChange.Added || change == InputDeviceChange.Reconnected || change == InputDeviceChange.Enabled) DisableReal(d);
+            };
+        }
         var dump = Env("PORTCAP_DUMP", "").Split('-');
         if (dump.Length == 2) { int.TryParse(dump[0], out dumpFrom); int.TryParse(dump[1], out dumpTo); }
         if (Env("PORTCAP_TRACE", "0") == "1") trace = new StreamWriter(System.IO.Path.Combine(dir, "trace.txt")) { AutoFlush = true };
@@ -162,6 +170,13 @@ public class PortCaptureBehaviour : MonoBehaviour
         scene = SceneManager.GetActiveScene().name;
         Debug.Log("PortCapture: seed " + seed + ", " + fps + " fps, dir " + dir + ", scenes " + string.Join(",", new List<string>(wanted.Keys).ToArray()));
         StartCoroutine(EndOfFrame());
+    }
+
+    void DisableReal(InputDevice d)
+    {
+        if (d == pad || !d.enabled) return;
+        InputSystem.DisableDevice(d);
+        Debug.Log("PortCapture: input device disabled: " + d.name + " (" + d.layout + ")");
     }
 
     void OnLoaded(Scene s, LoadSceneMode mode)
