@@ -10,7 +10,10 @@ done
 stage=$(mktemp -d)
 trap 'rm -rf "$stage"' EXIT
 cd "$R/port"
-cp "20 Minutes Till Dawn.sh" "$stage/"
+# Release zips carry the "# PORTMASTER:" line that PortMaster's own build adds; without it
+# harbourmaster inserts it into the launcher on its first runtime download, even while it runs.
+{ head -n 1 "20 Minutes Till Dawn.sh"; echo "# PORTMASTER: 20minutestilldawn.zip, 20 Minutes Till Dawn.sh"; tail -n +2 "20 Minutes Till Dawn.sh"; } > "$stage/20 Minutes Till Dawn.sh"
+chmod 755 "$stage/20 Minutes Till Dawn.sh"
 cp -r 20minutestilldawn "$stage/"
 rm -rf "$stage"/20minutestilldawn/{conf,log.txt,log.prev.txt,setup_log.txt,setup_log.prev.txt,player.log,.patch_stamp}
 find "$stage/20minutestilldawn/gamedata" -mindepth 1 ! -name 'Copy the game files here.txt' -exec rm -rf {} +
