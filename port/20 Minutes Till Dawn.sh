@@ -158,6 +158,19 @@ port_log "controller mapping for the game: ${unity_mapping:-none}"
 REAL_XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 pm_platform_helper "$GAMEDIR/box64/box64"
 cd "$DATADIR"
+# The game needs about 650 MB at the title and 700 MB or more in a run (Unity, Mono and box64
+# themselves), so a device with under 800 MB of RAM relies on swap. Say so in the log, and ask for
+# swap when there is none.
+mem_total_mb="$(awk '/^MemTotal:/ { print int($2 / 1024) }' /proc/meminfo 2>/dev/null)"
+swap_total_mb="$(awk '/^SwapTotal:/ { print int($2 / 1024) }' /proc/meminfo 2>/dev/null)"
+if [ "${mem_total_mb:-9999}" -lt 800 ]; then
+  port_log "low memory device: ${mem_total_mb} MB of RAM, ${swap_total_mb:-0} MB of swap; the game may be closed by the system"
+  if [ "${swap_total_mb:-0}" -lt 200 ]; then
+    pm_message "This device has little RAM and no swap. Turn on zram or swap in your firmware's settings, or the game will be closed by the system."
+    sleep 6
+  fi
+fi
+port_memwatch_start MinutesTillDawn
 port_log "starting the game"
 $ESUDO env WRAPPED_LIBRARY_PATH="$GAMEDIR/glespass" GLESPASS_CTXFIX=1 \
   GLESPASS_VENDOR=Generic GLESPASS_RENDERER=GLES-device GLESPASS_FPSCAP="${MTD_FPS:-30}" \

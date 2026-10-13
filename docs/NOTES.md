@@ -68,6 +68,16 @@ The launcher passes `BLEEDING_EDGE=0 STRONGMEM=1 BIGBLOCK=2`, keeping the strong
 
 A tester saw a flickering band across the top during the upgrade menu at 640x480, covering the hearts and the timer. It is XPBarAnimation, the flashing copy of the XP bar shown with the upgrade menu (child of PowerupMenuTG). It stretches over the whole canvas with a size delta of -428.95 and an anchored position of 209.5, so its height is canvas height - 428.95: the bar's 21 units on the game's 16:9 canvas (450 high), 51 units on the 480 high canvas the port gets with the camera crop off. `setup/byte_edits.py` now writes a `fix` edit that anchors it to the top with the bar's height (anchors (0,1) to (1,1), position y -15.5, height 21.05), which places it exactly as before on 16:9. Confirmed on the RG35XX H: a thin flashing bar with the hearts and timer visible, as in the original game.
 
+## Low memory devices (2026-10-13, G350 report)
+
+A G350 (662 MB RAM, about 460 MB free, 330 MB swap) had the game killed by the kernel after 222 s (anon-rss 402 MB, swap nearly full), the next run ended after 130 s. The libsteam_api lines in the log are expected (Facepunch.Steamworks falls back, nothing to fix).
+
+Measured on the RG35XX H under box64, no limits: menus about 573 MB resident (anon 447, file 139, GPU 74), a run about 590 anon plus 47 swap plus 105 file plus 81 GPU. On the PC, the Mono heap is only 63 MB at the title and 97 MB in a run, so the cost is box64, the Unity player and graphics memory, not game data. Shrinking every object pool to 10 saved about 15 MB, so pool sizes are not the lever (they are already reduced). Audio compression settings are import time only and compressing in memory costs too much CPU under box64.
+
+Reproduction: holding 320 MB with mlock on the RG35XX H (about 465 MB free, like the G350) kills the game after about 160 s in the menus or the first run, every time. `BOX64_DYNAREC_PURGE=1` did not help (killed at 167 s, anon-rss 312 MB).
+
+Conclusion: the footprint cannot be tweaked down to fit 450 MB free. The launcher now warns when MemTotal is under 800 MB and swap is under 200 MB, and logs memory every 15 seconds (MemAvailable, swap, game RSS, Mali memory) so reports show when it ran out.
+
 ## To do
 
 * Verify D-pad movement with the remap, and START (pause) behaviour (on PC the frame froze without a visible menu in both GLES and desktop GL runs, so not a port regression; check on the device).

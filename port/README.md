@@ -24,7 +24,7 @@ The game reads the pad itself. Buttons are named as the game's prompts show them
 
 ## Notes
 
-On 1 GB devices turn on zram (or swap) in your firmware's settings, so the game does not run out of memory.
+Memory: the game needs about 600 MB for the menus and 700 MB or more during a run (Unity, Mono and box64 together), counting the GPU's share. Devices with 1 GB of RAM need zram or swap turned on in the firmware's settings. Devices with 512 to 768 MB of RAM (about 450 MB free after the system starts) cannot hold the game and the system may stop it with an out of memory kill, usually a few minutes in. The launcher warns when it finds little RAM and no swap, and `log.txt` records the free memory every 15 seconds.
 
 Runs through box64 and Westonpack on Unity's own Linux player. Small screens get larger menu text and a full screen view (no 16:9 bars). Steam features (achievements, the Endless leaderboard) are not available.
 
