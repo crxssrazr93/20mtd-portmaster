@@ -7,6 +7,13 @@ R="$(cd "$(dirname "$0")/.." && pwd)"
 for f in box64/box64 glespass/libGL.so.1 box64/box64-x86_64-linux-gnu/libgcc_s.so.1; do
   [ -f "$R/port/20minutestilldawn/$f" ] || { echo "missing $f: run build/build.sh first"; exit 1; }
 done
+# Stamp the launcher and tools/files_version with a hash of everything the port folder ships, so the
+# launcher can tell when it runs against files from another release. Both stamps are committed.
+files_version=$(cd "$R/port/20minutestilldawn" && find . -type f ! -path './gamedata/*' ! -path './conf/*' \
+  ! -name log.txt ! -name '*.prev.txt' ! -name setup_log.txt ! -name player.log ! -name .patch_stamp \
+  ! -path ./tools/files_version | LC_ALL=C sort | xargs -d '\n' md5sum | md5sum | cut -c1-8)
+echo "$files_version" > "$R/port/20minutestilldawn/tools/files_version"
+sed -i "s/^port_files_version=.*/port_files_version=$files_version/" "$R/port/20 Minutes Till Dawn.sh"
 stage=$(mktemp -d)
 trap 'rm -rf "$stage"' EXIT
 cd "$R/port"

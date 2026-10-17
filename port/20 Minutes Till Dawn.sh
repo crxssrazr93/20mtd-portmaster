@@ -26,6 +26,19 @@ export PORT_REPORT_FILES="ports/20minutestilldawn/log.txt, setup_log.txt and pla
 source "$GAMEDIR/tools/portlog.sh"
 port_header "20 Minutes Till Dawn launcher"
 
+# build/package.sh writes the same hash of the port folder's files here and into tools/files_version.
+# A different value means this launcher and the folder come from different releases (a new launcher
+# copied over an old folder, or the reverse), which fails in confusing ways, so ask for a reinstall.
+port_files_version=15720ac2
+files_version="$(cat "$GAMEDIR/tools/files_version" 2>/dev/null)"
+if [ "$files_version" != "$port_files_version" ]; then
+  port_log "port files version ${files_version:-missing}, the launcher expects $port_files_version: mixed install"
+  pm_message "The launcher and the ports/20minutestilldawn folder come from different versions of the port. Install the port again (the gamedata folder can stay)."
+  sleep 8
+  pm_finish
+  exit 1
+fi
+
 if [ ! -f "$DATADIR/MinutesTillDawn.x86_64" ] && [ ! -d "$DATADIR/20MinutesTillDawn.app" ]; then
   pm_message "Game files missing. Copy 20MinutesTillDawn.app from the Steam (macOS) download into ports/20minutestilldawn/gamedata (see README)."
   sleep 5
